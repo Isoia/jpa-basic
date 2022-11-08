@@ -8,4 +8,4 @@
 
 ManyToOne <-- 연관관계 주인(JoinColumn(name = "외래키 이름"))
 
-OneToMany <-- 읽기만 가능(MappedBy = "주인쪽 값 이름(예제에선 team)")
+OneToMany <-- 읽기만 가능(MappedBy = "주인쪽 값 이름(예제에선 team)")(주인이 아닌쪽은 읽기만 가능 쓰기 불가능)
