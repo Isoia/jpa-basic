@@ -95,3 +95,64 @@ getName을 호출 -> target에 값이 없으니 jpa가 영속성 컨텍스트에
 영속성 컨텍스트에 찾는 엔티티가 이미 있으면 em.getReference를 호출해도 실제 엔티티를 반환
 em.gerReference로 프록시를 한번 반환하면 이후에 em.find를 호출해도 entity가 반환되는것이 아닌 프록시가 반환
 영속성 컨텍스트의 도움을 받을 수 없는 준영속 상태일 때 프록시를 초기화 하면 문제 발생 
+
+----지연로딩(LAZY)----(즉시로딩 : EAGER)
+
+@ManyToOne(fetch = FetchType.LAZY) 이렇게 해주면 LAZY가 해당된 엔티티는 조회가 되지 않음(Member의 경우 Team이 같이 조회되지 않고 Member만 조회됨)
+호출해봤자 지연로딩이 걸린 엔티티는 나오지 않고 getClass()를 해보면 프록시 객체로 조회가 됨
+만약 LAZY를 건 엔티티를 실제로 사용하는 시점에서 지연로딩이 걸린 entity에 프록시 객체가 초기화되면서 db에서 조회해서 가져옴(엔티티로 변함)
+
+실무에서는 즉시로딩을 사용x(가급적 지연로딩만 사용)
+즉시로딩을 사용하면 예상치 못한 sql문이 발생(모든 컬럼을 다 가져오기 때문에 나중에 테이블이 쌓이면 불러오는 값이 너무 많아져서 성능이 떨어짐)
+@ManyToOne과 @OneToOne은 기본이 즉시로딩이므로 꼭 (fetch = FetchType.LAZY) 적용하기!!!
+@OneToMany, @ManyToMany는 기본이 지연로딩이다
+
+----영속성 전이: CASCADE ----
+
+특정 엔티티를 영속 상태로 만들 때 연관된 엔티티도 함께 영속 상태로 만들고 싶을때 사용(삭제도 가능)
+ex) 부모 엔티티를 저장할 때 자식 엔티티도 함께 저장
+
+부모쪽 @OneToMany(cascade = CascadeType.ALL)속성을 추가해준다!
+그러면 부모쪽에 연관되어있는(parent.addChild(child1); parent.addChild(child2);) 밑에있는 컬럼들에도 persist를 시켜버림
+엔티티를 영속화할 때 연관된 엔티티도 함께 영속화 하는 편리함을 제공
+엮을려는 엔티티가 부모와 자식 한가지의 관계가 아닌 다른 관계로도 엮여 있으면 엮인 관계까지 같이 실행시키므로 잘 보고 사용!
+
+---- 고아 객체 ----
+부모 엔티티와 연관관계가 끊긴 자식 엔티티를 자동으로 삭제하는 기능 @OneToMany(orphanRemoval = true)
+주의사항 : 참조하는 곳이 하나일 때 사용해야함!, 특정 엔티티가 개인 소유할 때 사용(Parent가 child를 혼자 사용할 때)
+
+cascade = CascadeType.ALL, orphanRemoval = true 둘의 옵션을 활성화 시키면 부모 엔티티를 사용해 자식 엔티티의 생명주기를 관리 가능(영속화, 제거)
+
+---- 기본값 타입 ----
+
+jpa는 데이터타입을 엔티티타입과 값타입으로 분류함
+엔티티타입 : @Entity로 정의한 객체, 데이터가 변해도 식별자(id)로 추적 가능
+값타입 : int,String처럼 단순한 값으로 사용하는 자바 기본타입or객체, 식별자가 없고 값만 있어 변경시 추적 불가
+
+값타입 분류 : 기본값타입, 임베디드타입, 컬렉션 값 타입
+기본값 타입 : 자바 기본타입(int,double) 래퍼클래스 (Integer, Long) String
+    생명주기를 엔티티에 의존, 값타입은 공유x
+
+임베디드 타입
+@Embeddable : 값 타입을 정의하는 곳에 표시
+@Embedded : 값 타입을 사용하는 곳에 표시
+기본생성자 필수
+
+@Embeddable
+public class Period {
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+}
+
+사용할 @Entity 안에서
+@Embedded
+    private Period workPeriod;
+ 만약 한 엔티티에서 같은 값 타입을 사용하면?(컬럼이 중복)
+ @AttributeOverrides 사용
+    
+---- 값타입과 불변 객체 ----
+임베디드같은 값타입을 여러 엔티티에서 공유하면 위험함
+Address address = new Address("city");
+이 address를 member1, member2에 넣었다고 쳤을 때 member1.getAddress()를 치면 member2도 같이 변경
+대신 값을 복사해서 사용 Address newAddress = new Address(address.getCity);
+member1.setAddress(newAddress.getCity);를 사용
