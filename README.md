@@ -60,6 +60,7 @@ MappedSuperClass는 상속관계 매핑이 아님, 엔티티도 아니기에 테
 참고 @Entity는 엔티티나 MappedSuperClass로 지정한 클래스만 상속이 가능!
 
 --------프록시--------
+
 ex) Member를 호출할때 Team도 같이 호출 해야할까?
 
 Member만 필요한데 Team도 같이 호출될때 지연로딩으로 해결할 수 있다.
@@ -151,8 +152,22 @@ public class Period {
  @AttributeOverrides 사용
     
 ---- 값타입과 불변 객체 ----
+
 임베디드같은 값타입을 여러 엔티티에서 공유하면 위험함
 Address address = new Address("city");
 이 address를 member1, member2에 넣었다고 쳤을 때 member1.getAddress()를 치면 member2도 같이 변경
 대신 값을 복사해서 사용 Address newAddress = new Address(address.getCity);
 member1.setAddress(newAddress.getCity);를 사용
+
+---- 값 타입 컬렉션 ----
+
+값 타입을 하나 이상 저장할때 사용, @ElementCollection, @CollectionTable 사용,같은 테이블에 저장할 수 없어 1:n 방식으로 저장(별도의 테이블이 필요)
+값 타입 컬렉션은 기본적으로 지연로딩으로 설정되어있다
+값 타입 컬렉션을 수정하면 해당 테이블의 모든 값을 삭제하고 조회할려는 아이디의 값만 살려냄(사용x)
+그러니 Entity를 만들어서 해당 테이블과 양방향 매핑을 해주어야함
+
+---- jpql ----
+
+테이블이 아닌 객체를 대상으로 검색하는 객체 지향 쿼리
+select m from Member m where m.age > 18; 여기서 Member는 테이블이 아닌 객체이다
+QueryDSL을 할줄 알면 sql을 짜기 쉬워진다!(jsql만 잘하면 querysql과 문법과 같기 떄문에 jpql을 잘하자!)
