@@ -178,4 +178,40 @@ jpql은 sql을 추상화해서 특정 데이터베이스 sql에 의존하지 않
 
 jpql은 결국 sql로 변환된다.
 
+jpql로 쿼리문을 짤떄 테이블 명이 아닌 엔티티 이름을 사용해야함
+
+별칭은 필수 (select m from Member as m 에서 m (as는 스킵 가능))
+
+TypeQuery : 반환타입이 명확할때 사용
+Query : 반환타입이 명확하지 않을때 사용
+
+TypedQuery<Member> query1 = em.createQuery("select m from Member as m ", Member.class) 반환타입을 적어야 하기에 쿼리문 다음에 Member.class를 작성
+
+TypedQuery<String> query2 = em.createQuery("select m.username from Member as m ", String.class); Member의 이름을 반환하는거기에 String.class 작성
+
+위의 두가지 경우는 반환타입이 중복되지 않고 명확하기 떄문에 TypeQuery라 볼 수 있다
+
+Query query3 = em.createQuery("select m.username, m.age from Member as m ") 이 쿼리문의 경우 username(String)과 age(Integer)가 같이 있기에 반환타입이 명확하지 않아 query를 사용
+
+---- 결과 조회 API -----
+
+List<Member> resultList = query1.getResultList(); query1의 쿼리문에서 getResultList()를 사용하여 List로 값을 조회
+
+TypedQuery<Member> query1 = em.createQuery("select m from Member as m ", Member.class) 으로 만약에 값이 하나만 존재하는 경우에는
+
+query1.getSingleResult()라는 문이 있다. 얘의 반환은 하나이기에 Member result = query1.getSingleResult() 이렇게 된다
+
+getResultList로 결과가 하나 이상일떄 리스트를 반환하고 결과가 없으면 빈 리스트를 반환한다
+
+하지만 getSingleResult는 결과가 없거나 둘 이상이면 Exception을 발생시킨다
+
+고로 getSingleResult는 무조건 결과가 하나 있을때만 사용해야한다!!
+
+---- 파라미터 바인딩 ----
+
+TypedQuery<Member> query1 = em.createQuery("select m from Member as m where m.username = :username", Member.class);
+            
+query1.setParameter("username", "member1");
+
+
 
