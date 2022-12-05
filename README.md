@@ -171,3 +171,11 @@ member1.setAddress(newAddress.getCity);를 사용
 테이블이 아닌 객체를 대상으로 검색하는 객체 지향 쿼리
 select m from Member m where m.age > 18; 여기서 Member는 테이블이 아닌 객체이다
 QueryDSL을 할줄 알면 sql을 짜기 쉬워진다!(jsql만 잘하면 querysql과 문법과 같기 떄문에 jpql을 잘하자!)
+
+jqpl은 테이블이 아닌 엔티티 객체를 대상으로 쿼리한다.
+
+jpql은 sql을 추상화해서 특정 데이터베이스 sql에 의존하지 않는다
+
+jpql은 결국 sql로 변환된다.
+
+
