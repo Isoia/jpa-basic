@@ -213,5 +213,117 @@ TypedQuery<Member> query1 = em.createQuery("select m from Member as m where m.us
             
 query1.setParameter("username", "member1");
 
+where m.username = :username 에서 :username으로 설정하고 query1.setParameter("username", "member1")로 query1에 설정된 setParameter로 "username"의 파라미터값을 "member1"을 대입하겟다 로 설정
 
+em.createQuery("select m from Member m where m.username = :username", Member.class)
+    .setParameter("username", "member1")
+    .getSingleResult();
+    이렇게 묶어서 한번에 사용함
+ 
+ 
+ --- 프로젝션(select) ---
+ 
+ select 절에 조회할 대상을 지정
+ 
+ 프로젝션 대상 : 엔티티, 임베디드 타입, 스칼라 타입
+ 
+ select m from member m -> 엔티티 프로젝션
+ select m.team from Member m -> 엔티티 프로젝션
+ select m.address from Member m -> 임베디드 타입 프로젝션
+ select m.username, m.age from Member m -> 스칼라 타입 프로젝션
+ 
+ em.createQuery("select m.team from Member as m", Team.class)
+                .getResultList();
+  
+ 이렇게 받을 경우 Membe.class가 아닌 Team.class으로 받아야한다
 
+스칼라 타입 프로젝션은 받고싶은 타입들을 가져오는 것이다
+
+em.createQuery("select distinct m.username, m.age from Member m"); (distinct는 중복 제거)
+
+기존에 타입이 다른 2개를 조회하면 에러가 나온다고 했다
+
+new 명령어로 조회하면 간단하게 해결 가능
+
+public class MemberDTO {
+    private String name;
+    private int age;
+
+    public MemberDTO(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+}
+
+가져오고 싶은것들을 클래스로 만들고
+
+List<MemberDTO> resultList = em.createQuery("select new jpql.MemberDTO(m.username, m.age) from Member as m", MemberDTO.class)
+                    .getResultList();
+       
+new jpql.클래스이름(출력할것들)을 입력하면 가능
+
+--- 페이징 API ---
+
+JPA는 페이징을 두 API로 추상화
+setFirstResult(조회시작위치), setMaxResults(조회할 데이터 수)
+
+List<Member> result = em.createQuery("select m from Member as m order by m.age desc", Member.class)
+                    .setFirstResult(0)
+                    .setMaxResults(10)
+                    .getResultList();
+                    
+ --- 조인 ---
+ 내부조인 : select m from Member m [INNER] join m.team t
+ 외부조인 : select m from Member m left [OUTER] join m.team t
+ 세타조인 : select count(m) from Member m, Team t where m.username = t.name
+ 조인 on 사용 : select m, t from Member m  left outer join m.team t on t.name = 'A'
+ 아웃조인을 하면서 팀의 이름이 'a'인 경우
+ 
+ --- 서브쿼리 ---
+ 나이가 평균보다 많은 회원
+ 
+ select m from Member m 
+ where m.age > (select avg(m2.age) from Member m2)
+ 
+ jpa는 where, having절에서만 서브쿼리 사용 가능
+ select 절도 가능(하이버네이트에서 지원)
+ from절의 서브쿼리는 현재 jpql에서 불가능
+ 
+ --- jpql 타입 표현 ---
+ 
+ 문자 : 'HELLO', 'She''s'
+ 숫자 : 10L(Long), 10D(Double), 10F(Float)
+ Boolean : TRUE,FALSE
+ ENUM : jpabook.MemberType.Admin(패키지명 포함해야함)
+ 엔티티 타입 : TYPE(m) = Member(상속관계에서 사용)
+ 
+ --- 조건식(case...) ---
+ 
+ String query = "select " +
+                        "case when m.age <= 10 then '학생요금'" +
+                             "when m.age >= 60 then '경료요금'" +
+                             "else '일반요금'" +
+                        "end "+
+                        "from Member m";
+            List<String> result = em.createQuery(query, String.class)
+                    .getResultList();
+
+em.createQuery("select coalesce(m.username, '이름 없는 회원') from Member m") : 사용자 이름이 없으면 '이름 없는 회원'을 반환
+
+em.createQuery("select nullif(m.username, '관리자') from Member m") : 사용자 이름이 '관리자'면 null을 반환하고 나머지는 본인의 이름을 반환
