@@ -319,7 +319,7 @@ List<Member> result = em.createQuery("select m from Member as m order by m.age d
                         "case when m.age <= 10 then '학생요금'" +
                              "when m.age >= 60 then '경료요금'" +
                              "else '일반요금'" +
-                        "end "+
+                        "end "+ (end 이후 띄어쓰기 필수!!!)
                         "from Member m";
             List<String> result = em.createQuery(query, String.class)
                     .getResultList();
@@ -327,3 +327,14 @@ List<Member> result = em.createQuery("select m from Member as m order by m.age d
 em.createQuery("select coalesce(m.username, '이름 없는 회원') from Member m") : 사용자 이름이 없으면 '이름 없는 회원'을 반환
 
 em.createQuery("select nullif(m.username, '관리자') from Member m") : 사용자 이름이 '관리자'면 null을 반환하고 나머지는 본인의 이름을 반환
+
+--- jpql함수 ---
+CONCAT, SUBSTRING, TRIM, LOWER UPPER, LENGTH, LOCATE, ABS SQRT MOD, SIZE INDEX
+em.createQuery("select concat('a','b') From Member m",String.class)
+
+--- 경로 표현식 ---
+.(점)을 찍어 객체 그래프를 탐색하는것
+상태필드 : 단순히 값을 저장하기 위한 필드, 경로 탐색의 끝, 탐색x(m.username의 경우는 username이 객체가 아닌 필드이기에 더이상 탐색이 불가능)
+연관필드 : 연관관계를 위한 필드
+    단일값 연관 필드 : @ManyToOne, OneToOne, 대상이 엔티티(ex: m.team), 묵시적 내부 조인(inner join)발생, 탐색o
+    컬렉션값 연관 필드 : @OneToMany, ManyToMany, 대상이 컬렉션(ex.m.orders) 묵시적 내ㅜㅂ 조인 발생, 탐색x
