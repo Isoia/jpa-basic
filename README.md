@@ -337,4 +337,49 @@ em.createQuery("select concat('a','b') From Member m",String.class)
 상태필드 : 단순히 값을 저장하기 위한 필드, 경로 탐색의 끝, 탐색x(m.username의 경우는 username이 객체가 아닌 필드이기에 더이상 탐색이 불가능)
 연관필드 : 연관관계를 위한 필드
     단일값 연관 필드 : @ManyToOne, OneToOne, 대상이 엔티티(ex: m.team), 묵시적 내부 조인(inner join)발생, 탐색o
-    컬렉션값 연관 필드 : @OneToMany, ManyToMany, 대상이 컬렉션(ex.m.orders) 묵시적 내ㅜㅂ 조인 발생, 탐색x
+    컬렉션값 연관 필드 : @OneToMany, ManyToMany, 대상이 컬렉션(ex.m.orders) 묵시적 내부 조인 발생, 탐색x
+실무에서는 묵시적 조인을 사용하지 말것!! 무조건 명시적 조인을 사용해야함
+
+--- jpql 페치조인 ---
+실무에서 정말중요!!!
+sql 조인 종류x, jqpl에서 성능 최적화를 위해 제공하는 기능, 연관된 엔티티나 컬렉션을 sql 한번에 함께 조회 가능, 'join fetch' 명령어 사용
+예시
+sql : select M.* T.* from member m inner join team t on m.tead_id = t.id
+jpql : select m from Member m join fetch m.team(회원을 조회하는데 팀도 같이 조회하고싶을때 join fetch 조인할 필드(m.team)
+join fetch를 사용할떄는 지연로딩이 설정되있어도 무조건 즉시로딩으로 진행됨(@ManyToOne(fetch = FetchType.LAZY)가 무시됨)
+
+컬렉션 페치 조인
+컬렉션 조인 시 팀A가 2명 있다고 할때 프린트를 하면 팀A가 2번 호출됨
+
+2팀과 3명의 맴버가 있다는 가정 하에
+select t from team t : 결과값 2개 나옴
+select t from team t join fetch t.members : 결과값 3개 나옴(내부 조인이 되면서 팀은 2개지만 소속된 인원은 3명이기에 3개가 나옴)
+
+이런 중복을 해결하고 싶을때 select 뒤에 distinct 적용
+
+페치조인과 일반조인의 차이
+일반조인은 지연로딩이 걸린건 바로 데이터를 불러오지 않고 데이터를 호출하는 시점에 불러옴
+페치조인은 로딩시점에 전부 호출하기 떄문에 지연로딩이 걸려있어도 바로 호출됨
+
+일반조인
+jpql은 결과를 반환할 때 연관관계 고려x
+단지 select절에 지정된 엔티티만 조회할 뿐
+여기서는 팀 엔티티만 조회하고, 회원 엔티티는 조회x
+
+페치조인
+페치조인을 사용할 때만 연관된 엔티티도 함께 조회(즉시로딩)
+페치 조인은 객체 그래프를 sql 한번에 조회되는 개념
+
+--- 페치 조인의 한계 ---
+페치 조인 대상에는 별칭을 줄 수없다.
+t.members as m 사용x
+둘 이상의 컬렉션은 페치 조인 할 수 없다.
+컬렉션을 페치 조인 하면 페이징 API(setFirstResult,setMaxResult) 사용 불가능(일대일,다대일은 사용 가능, 일대다,다대다는 데이터 뻥튀기가 되기에 불가능)
+
+--- 엔티티 직접 사용 ---
+jpql에서 엔티티를 직접 사용하면 sql에서 해당 엔티티의 기본키 값을 사용
+
+jpql : select count(m) from member m
+sql : select count(m.id) as cnt from member m
+
+select m from member m where m.team = :team 에서 m.team이 가르키는것은 키의 기본키값
