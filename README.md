@@ -383,3 +383,19 @@ jpql : select count(m) from member m
 sql : select count(m.id) as cnt from member m
 
 select m from member m where m.team = :team 에서 m.team이 가르키는것은 키의 기본키값
+
+--- Named 쿼리 ---
+createNamedQuery를 사용
+클래스에 @NamedQuery를 지정하고 쿼리문을 작성 후 createNamedQuery("클래스에서 지정해준 네임드쿼리명")으로 사용
+
+--- 벌크 연산 ---
+sql문의 update, delete와 비슷하다고 보면 된다
+쿼리 한번으로 여러 테이블의 로우 변경
+createQuery(update문).executeUpdate() 이렇게 사용(int 반환)
+벌크연산은 대신 영속성 컨텍스트를 무시하고 데이터베이스에 직접 쿼리
+이를 해결하기 위해
+벌크 연산을 먼저 실행 -> 벌크 연산 수행 후 영속성 컨텍스트 초기화
+em.createQuery 할때 flush가 자동 호출됨
+그래서 createQuery로 업데이트문을 작성하고 영속성 컨텍스트를 확인해보면 업데이트가 적용이 안된걸 확인할 수 있음.
+em.find로 객체를 호출 후 확인해도 영속성 컨텍스트에는 적용이 안되있음
+em.clear를 하고 em.find로 호출 후 확인하면 영속성 컨텍스트에도 적용되 있는걸 확인할 수 있음
